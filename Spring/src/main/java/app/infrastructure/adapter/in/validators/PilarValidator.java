@@ -2,7 +2,7 @@ package app.infrastructure.adapter.in.validators;
 
 import org.springframework.stereotype.Component;
 
-import app.domain.models.Status;
+import app.domain.models.enums.Status;
 
 @Component
 public class PilarValidator extends SimpleValidator{

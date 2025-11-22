@@ -1,5 +1,7 @@
 package app.domain.models;
 
+import app.domain.models.enums.Status;
+
 public class Pilar {
 
 	private long id;
