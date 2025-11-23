@@ -2,6 +2,7 @@ package app.infrastructure.adapter.out;
 
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import app.domain.models.Pilar;
@@ -10,51 +11,55 @@ import app.infrastructure.entities.PilarEntity;
 import app.infrastructure.mappers.PilarMapper;
 import app.infrastructure.repositories.PilarRepository;
 
-@Component   // 🔥 IMPORTANTE
+@Component
 public class PilarAdapter implements PilarPort {
-	
-	private PilarMapper pilarMapper;
-	private PilarRepository pilarRepository;
-	
 
-	@Override
-	public Pilar findById(Pilar pilar) throws Exception{
-	Optional<PilarEntity> PilarEntity = pilarRepository.findById(pilar.getId());
-	return PilarMapper.toDomain(PilarEntity.get());
+	@Autowired
+    private final PilarMapper pilarMapper;
+	@Autowired
+    private final PilarRepository pilarRepository;
+
+    // 🔥 Inyección por constructor
+    public PilarAdapter(PilarMapper pilarMapper, PilarRepository pilarRepository) {
+        this.pilarMapper = pilarMapper;
+        this.pilarRepository = pilarRepository;
     }
 
+    @Override
+    public Pilar findById(Pilar pilar) throws Exception {
+        Optional<PilarEntity> pilarEntity = pilarRepository.findById(pilar.getId());
 
-	@Override
-	public Pilar update(Pilar pilar) throws Exception {
+        if (!pilarEntity.isPresent()) {
+            throw new Exception("No se encontró el pilar con id: " + pilar.getId());
+        }
 
-	    Optional<PilarEntity> existingOpt = pilarRepository.findById(pilar.getId());
+        return pilarMapper.toDomain(pilarEntity.get());
+    }
 
-	    if (!existingOpt.isPresent()) {
-	        throw new Exception("No se encontró el pilar con id: " + pilar.getId());
-	    }
+    @Override
+    public Pilar update(Pilar pilar) throws Exception {
 
-	    PilarEntity entity = existingOpt.get();
+        PilarEntity entity = pilarRepository.findById(pilar.getId())
+            .orElseThrow(() -> new Exception("No existe el pilar con ese id"));
 
-	    entity.setName(pilar.getName());
-	    entity.setPosX(pilar.getPosX());
-	    entity.setPosY(pilar.getPosY());
-	    entity.setStatus(pilar.getStatus());
+        // ⬅ actualizas SOLO el entity real (el que viene de la BD)
+        entity.setName(pilar.getName());
+        entity.setPosX(pilar.getPosX());
+        entity.setPosY(pilar.getPosY());
+        entity.setStatus(pilar.getStatus());
 
-	    PilarEntity updated = pilarRepository.save(entity);
+        // ⬅ save del entity REAL que ya está en estado managed
+        PilarEntity updated = pilarRepository.save(entity);
 
-	    return pilarMapper.toDomain(updated);
-	}
-
-
+        return pilarMapper.toDomain(updated);
+    }
 
     @Override
     public Pilar save(Pilar pilar) throws Exception {
         PilarEntity pilarEntity = pilarMapper.toEntity(pilar);
 
         pilarRepository.save(pilarEntity);
-        
+
         return pilar;
     }
-
 }
-
